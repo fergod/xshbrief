@@ -1,0 +1,809 @@
+<!DOCTYPE html><html lang="zh-CN"><head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>小红书笔记批量生成工具</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&amp;family=DM+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --ink: #1a1208;
+    --paper: #faf7f2;
+    --cream: #f0ebe0;
+    --warm: #e8dcc8;
+    --red: #d4341a;
+    --red-soft: #f5e8e5;
+    --gold: #c4922a;
+    --border: #d6cdb8;
+    --text-secondary: #7a6e5e;
+    --tag-bg: #fff8ee;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Noto Serif SC', serif;
+    min-height: 100vh;
+  }
+
+  /* header */
+  header {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 28px 48px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    border-bottom: 3px solid var(--red);
+  }
+
+  .logo-mark {
+    width: 44px; height: 44px;
+    background: var(--red);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+  }
+
+  header h1 { font-size: 20px; font-weight: 700; letter-spacing: 0.05em; }
+  header p { font-size: 13px; color: #a89e8e; margin-top: 3px; letter-spacing: 0.03em; }
+
+  .badge {
+    margin-left: auto;
+    background: var(--red);
+    color: white;
+    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    letter-spacing: 0.05em;
+  }
+
+  /* layout */
+  .container {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 48px 32px 80px;
+  }
+
+  .step-label {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 28px;
+  }
+
+  .step-num {
+    width: 28px; height: 28px;
+    background: var(--red);
+    color: white;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; flex-shrink: 0;
+  }
+
+  .step-label h2 {
+    font-size: 17px; font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  /* form card */
+  .form-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 36px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 12px rgba(26,18,8,0.05);
+  }
+
+  .field-row { margin-bottom: 28px; }
+  .field-row:last-child { margin-bottom: 0; }
+
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+    margin-bottom: 9px;
+    text-transform: uppercase;
+  }
+
+  label span.req { color: var(--red); margin-left: 3px; }
+  label span.hint {
+    font-size: 11px;
+    color: #b0a898;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    margin-left: 6px;
+  }
+
+  input[type="text"], textarea, select {
+    width: 100%;
+    background: var(--paper);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    resize: vertical;
+  }
+
+  input[type="text"]:focus, textarea:focus, select:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(196,146,42,0.12);
+    background: white;
+  }
+
+  textarea { min-height: 90px; line-height: 1.7; }
+
+  .textarea-tall { min-height: 120px; }
+
+  .char-hint {
+    text-align: right;
+    font-size: 11px;
+    color: #c0b8a8;
+    margin-top: 5px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* tag-style tone selector */
+  .tone-grid {
+    display: flex; flex-wrap: wrap; gap: 9px;
+  }
+
+  .tone-tag {
+    padding: 7px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 30px;
+    font-size: 13px;
+    cursor: pointer;
+    background: var(--paper);
+    transition: all 0.15s;
+    user-select: none;
+  }
+
+  .tone-tag:hover { border-color: var(--gold); background: var(--tag-bg); }
+
+  .tone-tag.active {
+    border-color: var(--red);
+    background: var(--red-soft);
+    color: var(--red);
+    font-weight: 600;
+  }
+
+  .links-area {
+    display: flex; flex-direction: column; gap: 10px;
+  }
+
+  .link-row {
+    display: flex; gap: 10px; align-items: center;
+  }
+
+  .link-row input { flex: 1; margin: 0; }
+
+  .btn-add-link {
+    background: none;
+    border: 1.5px dashed var(--border);
+    border-radius: 8px;
+    padding: 9px 16px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-family: 'Noto Serif SC', serif;
+    transition: all 0.15s;
+  }
+
+  .btn-add-link:hover { border-color: var(--gold); color: var(--gold); }
+
+  .btn-remove {
+    background: none;
+    border: none;
+    color: var(--border);
+    cursor: pointer;
+    font-size: 18px;
+    padding: 4px;
+    transition: color 0.15s;
+    flex-shrink: 0;
+  }
+
+  .btn-remove:hover { color: var(--red); }
+
+  /* count selector */
+  .count-row {
+    display: flex; gap: 10px;
+  }
+
+  .count-btn {
+    width: 40px; height: 40px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: var(--paper);
+    font-size: 14px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+    font-family: 'DM Mono', monospace;
+    font-weight: 600;
+  }
+
+  .count-btn:hover { border-color: var(--gold); background: var(--tag-bg); }
+  .count-btn.active { border-color: var(--red); background: var(--red-soft); color: var(--red); }
+
+  /* generate button */
+  .btn-generate {
+    width: 100%;
+    background: var(--red);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    padding: 18px;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 8px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-generate::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0);
+    transition: background 0.2s;
+  }
+
+  .btn-generate:hover { background: #b82d15; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(212,52,26,0.3); }
+  .btn-generate:active { transform: translateY(0); }
+
+  /* output section */
+  .output-section {
+    margin-top: 40px;
+    display: none;
+  }
+
+  .output-section.visible { display: block; }
+
+  .output-card {
+    background: var(--ink);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(26,18,8,0.15);
+  }
+
+  .output-header {
+    background: #2a2010;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #3a3020;
+  }
+
+  .output-title {
+    color: var(--gold);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+  }
+
+  .output-actions {
+    display: flex; gap: 10px;
+  }
+
+  .btn-copy {
+    background: var(--red);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 20px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Noto Serif SC', serif;
+    letter-spacing: 0.04em;
+    transition: all 0.15s;
+  }
+
+  .btn-copy:hover { background: #b82d15; }
+  .btn-copy.copied { background: #2a7a3a; }
+
+  .output-body {
+    padding: 28px 28px;
+    max-height: 560px;
+    overflow-y: auto;
+  }
+
+  .output-body::-webkit-scrollbar { width: 6px; }
+  .output-body::-webkit-scrollbar-track { background: transparent; }
+  .output-body::-webkit-scrollbar-thumb { background: #3a3020; border-radius: 3px; }
+
+  pre {
+    color: #e8dcc8;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    line-height: 1.85;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .hl-section { color: var(--gold); font-weight: 500; }
+  .hl-number { color: #e88a5a; }
+  .hl-key { color: #a8d4a8; }
+
+  /* guide box */
+  .guide-box {
+    background: #fffbf2;
+    border: 1.5px solid var(--warm);
+    border-left: 4px solid var(--gold);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-top: 20px;
+  }
+
+  .guide-box h3 { font-size: 14px; color: var(--gold); margin-bottom: 10px; }
+
+  .guide-steps { list-style: none; }
+
+  .guide-steps li {
+    font-size: 13px;
+    color: #7a6e5e;
+    padding: 5px 0;
+    display: flex; gap: 10px;
+    line-height: 1.6;
+  }
+
+  .guide-steps li::before {
+    content: attr(data-n);
+    color: var(--gold);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* divider */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 36px 0;
+  }
+
+  /* responsive */
+  @media (max-width: 600px) {
+    header { padding: 20px 20px; }
+    .container { padding: 28px 16px 60px; }
+    .form-card { padding: 24px 20px; }
+    .output-body { padding: 18px; }
+  }
+</style>
+<script src="https://g.alicdn.com/network-security/uploadBlock/0.0.26/index.js"></script></head>
+<body>
+
+<header>
+  <div class="logo-mark">📕</div>
+  <div>
+    <h1>小红书笔记批量生成工具</h1>
+    <p>填写项目 Brief，一键生成 OpenClaw 指令</p>
+  </div>
+  <div class="badge">DeepSeek · 通义万象 · Gemini</div>
+</header>
+
+<div class="container">
+
+  <!-- STEP 1 -->
+  <div class="step-label">
+    <div class="step-num">1</div>
+    <h2>填写项目 Brief</h2>
+  </div>
+
+  <div class="form-card">
+
+    <div class="field-row">
+      <label>项目名称 <span class="req">*</span></label>
+      <input type="text" id="project_name" placeholder="例：某护肤品牌春季新品发布"/>
+    </div>
+
+    <div class="field-row">
+      <label>项目概述 <span class="req">*</span> <span class="hint">品牌背景、产品特点、推广目标</span></label>
+      <textarea id="project_overview" class="textarea-tall" placeholder="例：XX品牌旗下新推出的玻尿酸精华液，主打「3秒吸收、持效保湿72小时」，本次推广目标是触达18-28岁学生和职场新人群体，提升新品知名度……"></textarea>
+    </div>
+
+    <div class="field-row">
+      <label>核心信息点（一句话）<span class="req">*</span></label>
+      <input type="text" id="core_message" placeholder="例：72小时深层补水，让你的皮肤从内透亮"/>
+      <div class="char-hint" id="core_char">0 / 50</div>
+    </div>
+
+    <div class="field-row">
+      <label>笔记受众群体 <span class="req">*</span></label>
+      <input type="text" id="audience" placeholder="例：18-28岁女性、护肤新手、在意性价比的学生党"/>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="field-row">
+      <label>内容风格 / 笔记调性 <span class="req">*</span></label>
+      <div class="tone-grid" id="tone_grid">
+        <div class="tone-tag" data-val="种草分享">🌿 种草分享</div>
+        <div class="tone-tag" data-val="干货攻略">📋 干货攻略</div>
+        <div class="tone-tag" data-val="情感共鸣">💬 情感共鸣</div>
+        <div class="tone-tag" data-val="对比测评">🔍 对比测评</div>
+        <div class="tone-tag" data-val="场景故事">🎬 场景故事</div>
+        <div class="tone-tag" data-val="问答互动">❓ 问答互动</div>
+        <div class="tone-tag" data-val="职场/学习">💼 职场/学习</div>
+        <div class="tone-tag" data-val="生活美学">✨ 生活美学</div>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <label>产品/品牌关键词 <span class="hint">逗号分隔，将穿插进笔记</span></label>
+      <input type="text" id="keywords" placeholder="例：玻尿酸、精华液、72小时、轻薄不黏腻"/>
+    </div>
+
+    <div class="field-row">
+      <label>禁止出现的内容 <span class="hint">规避词、竞品名、敏感描述</span></label>
+      <input type="text" id="forbidden" placeholder="例：不得提及竞品XX、不得夸大功效承诺"/>
+    </div>
+
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="step-label" style="margin-top:36px">
+    <div class="step-num">2</div>
+    <h2>参考笔记 &amp; 生成配置</h2>
+  </div>
+
+  <div class="form-card">
+
+    <div class="field-row">
+      <label>参考笔记链接 <span class="hint">小红书链接，AI 会模仿风格</span></label>
+      <div class="links-area" id="links_area">
+        <div class="link-row">
+          <input type="text" placeholder="https://www.xiaohongshu.com/explore/..."/>
+          <button class="btn-remove" onclick="removeLink(this)">×</button>
+        </div>
+      </div>
+      <button class="btn-add-link" onclick="addLink()" style="margin-top:10px; width:100%">+ 添加链接</button>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="field-row">
+      <label>生成篇数</label>
+      <div class="count-row" id="count_row">
+        <button class="count-btn" data-n="5" onclick="setCount(this)">5</button>
+        <button class="count-btn active" data-n="10" onclick="setCount(this)">10</button>
+        <button class="count-btn" data-n="15" onclick="setCount(this)">15</button>
+        <button class="count-btn" data-n="20" onclick="setCount(this)">20</button>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <label>每篇配图数量</label>
+      <div class="count-row" id="img_row">
+        <button class="count-btn" data-n="1" onclick="setImgCount(this)">1</button>
+        <button class="count-btn active" data-n="2" onclick="setImgCount(this)">2</button>
+        <button class="count-btn" data-n="3" onclick="setImgCount(this)">3</button>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <label>输出语言风格</label>
+      <div class="tone-grid">
+        <div class="tone-tag active" data-group="lang" data-val="活泼口语（小红书主流）" onclick="setLang(this)">活泼口语</div>
+        <div class="tone-tag" data-group="lang" data-val="温柔治愈" onclick="setLang(this)">温柔治愈</div>
+        <div class="tone-tag" data-group="lang" data-val="专业理性" onclick="setLang(this)">专业理性</div>
+        <div class="tone-tag" data-group="lang" data-val="幽默轻松" onclick="setLang(this)">幽默轻松</div>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <label>图片风格描述 <span class="hint">告诉 通义万象/Gemini 生成什么风格的配图</span></label>
+      <textarea id="img_style" placeholder="例：浅色奶油风背景，产品特写，自然光，高级感；或「人物使用场景，真实感，暖色调」"></textarea>
+    </div>
+
+  </div>
+
+  <button class="btn-generate" onclick="generatePrompt()">⚡ 生成 OpenClaw 指令</button>
+
+  <!-- OUTPUT -->
+  <div class="output-section" id="output_section">
+    <div class="step-label" style="margin-top:36px">
+      <div class="step-num">3</div>
+      <h2>复制指令 → 粘贴到 OpenClaw</h2>
+    </div>
+
+    <div class="output-card">
+      <div class="output-header">
+        <span class="output-title">OPENCLAW_PROMPT.txt</span>
+        <div class="output-actions">
+          <button class="btn-copy" id="copy_btn" onclick="copyPrompt()">📋 一键复制</button>
+        </div>
+      </div>
+      <div class="output-body">
+        <pre id="prompt_output"></pre>
+      </div>
+    </div>
+
+    <div class="guide-box">
+      <h3>📌 接下来怎么操作</h3>
+      <ol class="guide-steps">
+        <li data-n="01">点击「一键复制」，将指令复制到剪贴板</li>
+        <li data-n="02">打开 OpenClaw，选择 DeepSeek 模型，新建会话</li>
+        <li data-n="03">粘贴指令并发送，等待 AI 生成 10 篇文案</li>
+        <li data-n="04">OpenClaw 会自动生成 Python 图片代码，运行前在代码顶部填入 <b>通义万象 API Key</b>（阿里云控制台获取），或切换为 Gemini</li>
+        <li data-n="05">最终输出：一个 Excel 汇总所有文案 + 每篇一个图片文件夹</li>
+      </ol>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Tone tags (multi)
+  document.querySelectorAll('#tone_grid .tone-tag').forEach(tag => {
+    tag.addEventListener('click', () => tag.classList.toggle('active'));
+  });
+
+  // Link management
+  function addLink() {
+    const area = document.getElementById('links_area');
+    const row = document.createElement('div');
+    row.className = 'link-row';
+    row.innerHTML = `<input type="text" placeholder="https://www.xiaohongshu.com/explore/..."><button class="btn-remove" onclick="removeLink(this)">×</button>`;
+    area.appendChild(row);
+  }
+
+  function removeLink(btn) {
+    const rows = document.querySelectorAll('.link-row');
+    if (rows.length > 1) btn.closest('.link-row').remove();
+  }
+
+  // Count selectors
+  let noteCount = 10;
+  let imgCount = 2;
+
+  function setCount(btn) {
+    document.querySelectorAll('#count_row .count-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    noteCount = parseInt(btn.dataset.n);
+  }
+
+  function setImgCount(btn) {
+    document.querySelectorAll('#img_row .count-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    imgCount = parseInt(btn.dataset.n);
+  }
+
+  // Lang selector (single)
+  let langVal = '活泼口语（小红书主流）';
+  function setLang(btn) {
+    document.querySelectorAll('[data-group="lang"]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    langVal = btn.dataset.val;
+  }
+
+  // Char counter
+  document.getElementById('core_message').addEventListener('input', function() {
+    document.getElementById('core_char').textContent = `${this.value.length} / 50`;
+  });
+
+  // Collect links
+  function getLinks() {
+    return Array.from(document.querySelectorAll('.link-row input'))
+      .map(i => i.value.trim()).filter(Boolean);
+  }
+
+  // Collect tones
+  function getTones() {
+    return Array.from(document.querySelectorAll('#tone_grid .tone-tag.active'))
+      .map(t => t.dataset.val).join('、') || '种草分享';
+  }
+
+  // Main generate
+  function generatePrompt() {
+    const name     = document.getElementById('project_name').value.trim();
+    const overview = document.getElementById('project_overview').value.trim();
+    const core     = document.getElementById('core_message').value.trim();
+    const audience = document.getElementById('audience').value.trim();
+    const keywords = document.getElementById('keywords').value.trim();
+    const forbidden= document.getElementById('forbidden').value.trim();
+    const imgStyle = document.getElementById('img_style').value.trim();
+    const tones    = getTones();
+    const links    = getLinks();
+
+    if (!name || !overview || !core || !audience) {
+      alert('请填写必填项：项目名称、项目概述、核心信息点、受众群体');
+      return;
+    }
+
+    const linksBlock = links.length
+      ? links.map((l,i) => `  参考${i+1}：${l}`).join('\n')
+      : '  （未提供，请根据风格自行发挥）';
+
+    const forbiddenBlock = forbidden
+      ? `\n⚠️ 禁止出现：${forbidden}`
+      : '';
+
+    const kwBlock = keywords
+      ? `\n📌 需要自然融入的关键词：${keywords}` : '';
+
+    const imgBlock = imgStyle
+      ? `\n🖼️ 配图风格要求：${imgStyle}`
+      : `\n🖼️ 配图风格：根据笔记内容自动决定，简洁精美，符合小红书审美`;
+
+    const prompt = `# 小红书笔记批量生成任务
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+## 📁 项目信息
+项目名称：${name}
+项目概述：${overview}
+核心信息点：${core}
+目标受众：${audience}
+内容风格：${tones}
+语言风格：${langVal}${kwBlock}${forbiddenBlock}
+
+## 🔗 参考笔记链接（请爬取或模仿以下风格）
+${linksBlock}
+${imgBlock}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## 🎯 你需要完成的任务
+
+### 第一步：生成 ${noteCount} 篇小红书笔记文案
+
+每篇笔记格式如下：
+
+---
+【笔记编号】：第 X 篇
+【标题】：（吸睛标题，含 emoji，15字以内）
+【正文】：
+（正文内容，300-500字，口语化，自然融入关键词，结尾引导互动）
+【话题标签】：#标签1 #标签2 #标签3 #标签4 #标签5
+【配图提示词1】：（中文描述，同时附英文翻译供 Gemini 使用）
+【配图提示词2】：（中文描述，同时附英文翻译供 Gemini 使用）
+---
+
+要求：
+- ${noteCount} 篇笔记角度各不相同，避免重复
+- 每篇有独立的叙事视角（如：自述体、对话体、测评体、场景代入等）
+- 标题必须有钩子感，让人想点进去
+- 话题标签精准，覆盖主话题 + 长尾话题
+- 配图提示词要具体，描述光线、构图、色调、主体
+
+### 第二步：生成 Excel 汇总表
+
+生成一份 Excel 文件（用 Python openpyxl 或 pandas 实现），包含以下列：
+| 编号 | 标题 | 正文 | 话题标签 | 配图提示词1 | 配图提示词2 | 图片文件夹路径 |
+
+文件名：${name}_小红书笔记汇总.xlsx
+
+### 第三步：调用图片 API 生成配图
+
+**首选：通义万象（阿里云）**，中文 prompt 理解更好，更符合小红书风格。
+**备选：Gemini Imagen**，若通义万象不可用时使用。
+
+为每篇笔记生成 ${imgCount} 张配图，运行以下 Python 脚本：
+
+\`\`\`python
+import requests, os, base64, json
+
+# ============ 配置区域（二选一）============
+IMG_PROVIDER = "wanx"   # "wanx" 用通义万象 | "gemini" 用 Gemini
+
+WANX_API_KEY  = "你的阿里云API_Key"       # 通义万象
+GEMINI_API_KEY = "你的Gemini_API_Key"      # Gemini
+
+BASE_DIR = "${name}_小红书笔记"
+# ==========================================
+
+def generate_wanx(prompt_zh, save_path):
+    """通义万象 wanx2.1-t2i-turbo"""
+    import dashscope
+    from dashscope import ImageSynthesis
+    dashscope.api_key = WANX_API_KEY
+    rsp = ImageSynthesis.call(
+        model="wanx2.1-t2i-turbo",
+        prompt=prompt_zh,
+        n=1,
+        size="768*1024"   # 竖图，适合小红书
+    )
+    if rsp.status_code == 200:
+        url = rsp.output.results[0].url
+        img = requests.get(url).content
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        with open(save_path, "wb") as f:
+            f.write(img)
+        print(f"✅ 通义万象 已保存：{save_path}")
+    else:
+        print(f"❌ 失败：{rsp.message}")
+
+def generate_gemini(prompt_en, save_path):
+    """Gemini Imagen 3"""
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key={GEMINI_API_KEY}"
+    payload = {
+        "instances": [{"prompt": prompt_en}],
+        "parameters": {"sampleCount": 1, "aspectRatio": "3:4"}
+    }
+    res = requests.post(url, json=payload)
+    data = res.json()
+    img_b64 = data["predictions"][0]["bytesBase64Encoded"]
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    with open(save_path, "wb") as f:
+        f.write(base64.b64decode(img_b64))
+    print(f"✅ Gemini 已保存：{save_path}")
+
+def generate_image(prompt_zh, prompt_en, save_path):
+    if IMG_PROVIDER == "wanx":
+        generate_wanx(prompt_zh, save_path)
+    else:
+        generate_gemini(prompt_en, save_path)
+
+# ——— 根据第一步生成的配图提示词填入 ———
+# 格式：{"id": 1, "prompts": [("中文提示词", "English prompt"), ...]}
+notes = [
+    # {"id": 1, "prompts": [("浅色背景产品特写，自然光", "product close-up, soft natural light, cream background"), ...]},
+]
+
+for note in notes:
+    folder = os.path.join(BASE_DIR, f"第{note['id']:02d}篇")
+    for i, (zh, en) in enumerate(note["prompts"], 1):
+        generate_image(zh, en, os.path.join(folder, f"配图{i}.jpg"))
+\`\`\`
+
+**安装依赖：**
+\`\`\`bash
+pip install dashscope requests   # 通义万象
+# Gemini 仅需 requests，无需额外安装
+\`\`\`
+
+### 第四步：整理最终文件结构
+
+完成后，输出文件结构如下：
+\`\`\`
+${name}_小红书笔记/
+├── ${name}_小红书笔记汇总.xlsx
+├── 第01篇/
+│   ├── 配图1.jpg
+│   └── 配图2.jpg
+├── 第02篇/
+│   ├── 配图1.jpg
+│   └── 配图2.jpg
+... （共 ${noteCount} 篇）
+\`\`\`
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚡ 请先输出所有 ${noteCount} 篇笔记文案，然后再生成 Excel 代码和图片生成代码。
+开始吧！`;
+
+    document.getElementById('prompt_output').textContent = prompt;
+    const out = document.getElementById('output_section');
+    out.classList.add('visible');
+    setTimeout(() => out.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+  }
+
+  // Copy
+  function copyPrompt() {
+    const text = document.getElementById('prompt_output').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copy_btn');
+      btn.textContent = '✅ 已复制！';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = '📋 一键复制';
+        btn.classList.remove('copied');
+      }, 2500);
+    });
+  }
+</script>
+
+
+</body></html>
